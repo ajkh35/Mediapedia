@@ -21,10 +21,10 @@ class HomeActivity : BaseActivity() {
     }
 
     override fun initializeViews() {
-        mTitle = "Home"
-
+        mTitle = "Movies"
         setSupportActionBar(action_bar)
-        supportActionBar!!.title = mTitle
+
+        changeFragment(MoviesFragment.newInstance("Movies"))
     }
 
     /**
@@ -51,11 +51,18 @@ class HomeActivity : BaseActivity() {
         }
 
         if(fragment != null) {
-            val transaction = supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.fragment_container, fragment)
-            transaction.commit()
-
-            supportActionBar!!.title = mTitle
+            changeFragment(fragment)
         }
+    }
+
+    /**
+     * Method to change the fragment
+     */
+    private fun changeFragment(fragment: Fragment) {
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.fragment_container, fragment)
+        transaction.commit()
+
+        supportActionBar!!.title = mTitle
     }
 }

@@ -5,10 +5,17 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.ajay.mediapedia.HomeActivity
 
 import com.ajay.mediapedia.R
+import com.ajay.mediapedia.data.model.NetworkMovieDto
+import com.ajay.mediapedia.viewmodels.BaseViewModelFactory
+import com.ajay.mediapedia.viewmodels.MovieViewModel
 import com.synnapps.carouselview.CarouselView
 import kotlinx.android.synthetic.main.fragment_movies.*
 
@@ -27,6 +34,7 @@ class MoviesFragment : Fragment() {
     private var mTitle: String? = null
 //    private var param2: String? = null
     private val mImages: Array<Int> = arrayOf(R.mipmap.mediapedia,R.mipmap.mediapedia,R.mipmap.mediapedia)
+    private lateinit var mViewModel: MovieViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +50,15 @@ class MoviesFragment : Fragment() {
     ): View? {
         // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.fragment_movies, container, false)
+
+        activity.run {
+            mViewModel = ViewModelProvider(this as HomeActivity,
+                BaseViewModelFactory{MovieViewModel(application)}).get(MovieViewModel::class.java)
+        }
+
+        mViewModel.getPopularMovies().observe(this, Observer<List<NetworkMovieDto>> {
+            Toast.makeText(activity, it.toString(), Toast.LENGTH_LONG).show()
+        })
 
         // Setup the movie carousel
         setupCarousel(view)
