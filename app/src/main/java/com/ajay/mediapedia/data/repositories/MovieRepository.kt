@@ -2,14 +2,15 @@ package com.ajay.mediapedia.data.repositories
 
 import android.content.Context
 import android.util.Log
+import android.view.View
 import androidx.lifecycle.MutableLiveData
 import com.ajay.mediapedia.R
-import com.ajay.mediapedia.data.model.NetworkMovieDto
+import com.ajay.mediapedia.data.model.Movie
+import com.ajay.mediapedia.data.model.MovieNetworkDto
 import com.ajay.mediapedia.network.ApiClient
 import com.ajay.mediapedia.utils.Constants
 import com.ajay.mediapedia.utils.SingletonHolder
 import com.google.gson.Gson
-import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 import okhttp3.ResponseBody
 import org.json.JSONObject
@@ -19,18 +20,19 @@ import retrofit2.Response
 
 class MovieRepository private constructor(context: Context){
 
+    private val TAG: String = javaClass.simpleName
     private val mContext = context
-    private val mPopularMoviesList: MutableLiveData<List<NetworkMovieDto>> = MutableLiveData()
+    private val mPopularMoviesList: MutableLiveData<List<MovieNetworkDto>> = MutableLiveData(ArrayList())
+    private val mNowPlayingList: MutableLiveData<List<MovieNetworkDto>> = MutableLiveData(ArrayList())
 
-    init {
-        mPopularMoviesList.postValue(ArrayList())
-    }
-
-    fun getPopularMoviesFromApi(): MutableLiveData<List<NetworkMovieDto>> {
-        ApiClient.getMovieApi().getPopularMovies("Bearer " + mContext.getString(R.string.tmdb_access_token),
-            Constants.CONTENT_TYPE_JSON).enqueue(object : Callback<ResponseBody> {
+    /**
+     * Method to get popular movies from api
+     */
+    fun getPopularMoviesFromApi(page: Int): MutableLiveData<List<MovieNetworkDto>> {
+        ApiClient.getMovieApi().getPopularMovies("Bearer ${mContext.getString(R.string.tmdb_access_token)}",
+            Constants.CONTENT_TYPE_JSON, page).enqueue(object : Callback<ResponseBody> {
             override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                Log.d(javaClass.simpleName, t.localizedMessage)
+                Log.d(TAG, t.localizedMessage)
             }
 
             override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
@@ -39,20 +41,108 @@ class MovieRepository private constructor(context: Context){
                     val jsonObject = JSONObject(jsonResponse)
                     if(jsonObject.has("results")) {
                         val jsonArray = jsonObject.getString("results")
-                        val moviesList = Gson().fromJson<List<NetworkMovieDto>>(jsonArray,
-                            object: TypeToken<List<NetworkMovieDto>>() {}.type)
+                        val moviesList = Gson().fromJson<List<MovieNetworkDto>>(jsonArray,
+                            object: TypeToken<List<MovieNetworkDto>>() {}.type)
 
-                        Log.d("TAG>>>", moviesList[0].title)
                         mPopularMoviesList.postValue(moviesList)
                     }
 
                 } else {
-                    Log.d(javaClass.simpleName, response.errorBody()!!.string())
+                    Log.d(TAG, response.errorBody()!!.string())
                 }
             }
         })
 
         return mPopularMoviesList
+    }
+
+    /**
+     * Method to get now playing movies from api
+     */
+    fun getNowPlayingFromApi(page: Int): MutableLiveData<List<MovieNetworkDto>> {
+        ApiClient.getMovieApi().getNowPlaying("Bearer " + mContext.getString(R.string.tmdb_access_token),
+            Constants.CONTENT_TYPE_JSON, page).enqueue(object: Callback<ResponseBody> {
+            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                Log.d(TAG, t.localizedMessage)
+            }
+
+            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                if(response.isSuccessful) {
+                    val jsonResponse = response.body()!!.string()
+                    val jsonObject = JSONObject(jsonResponse)
+                    if(jsonObject.has("results")) {
+                        val jsonArray = jsonObject.getString("results")
+                        val moviesList = Gson().fromJson<List<MovieNetworkDto>>(jsonArray,
+                            object: TypeToken<List<MovieNetworkDto>>() {}.type)
+
+                        mNowPlayingList.postValue(moviesList)
+                    }
+
+                } else {
+                    Log.d(TAG, response.errorBody()!!.string())
+                }
+            }
+
+        })
+
+        return mNowPlayingList
+    }
+
+    /**
+     * Method to get more pages of now playing movies from api
+     */
+    fun getMoreNowPlayingFromApi(page: Int) {
+        ApiClient.getMovieApi().getNowPlaying("Bearer ${mContext.getString(R.string.tmdb_access_token)}",
+            Constants.CONTENT_TYPE_JSON, page).enqueue(object: Callback<ResponseBody> {
+            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                Log.d(TAG, t.localizedMessage)
+            }
+
+            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                if(response.isSuccessful) {
+                    val jsonObject = JSONObject(response.body()!!.string())
+                    if(jsonObject.has("results")) {
+                        val jsonArray = jsonObject.getString("results")
+                        val movieDtoList = Gson().fromJson<List<MovieNetworkDto>>(jsonArray,
+                            object : TypeToken<List<MovieNetworkDto>>() {}.type
+                        )
+
+                        mNowPlayingList.postValue(movieDtoList)
+                    }
+                } else {
+                    Log.d(TAG, response.errorBody()!!.string())
+                }
+            }
+
+        })
+    }
+
+    /**
+     * Method to get more pages of popular movies from api
+     */
+    fun getMorePopularMoviesFromApi(page: Int) {
+        ApiClient.getMovieApi().getPopularMovies("Bearer ${mContext.getString(R.string.tmdb_access_token)}",
+            Constants.CONTENT_TYPE_JSON, page).enqueue(object : Callback<ResponseBody> {
+            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                Log.d(TAG, t.localizedMessage)
+            }
+
+            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                if(response.isSuccessful) {
+                    val jsonObject = JSONObject(response.body()!!.string())
+                    if(jsonObject.has("results")) {
+                        val jsonArray = jsonObject.getString("results")
+                        val movieDtoList = Gson().fromJson<List<MovieNetworkDto>>(jsonArray,
+                            object: TypeToken<List<MovieNetworkDto>>() {}.type)
+
+                        mPopularMoviesList.postValue(movieDtoList)
+                    }
+                } else {
+                    Log.d(TAG, response.errorBody()!!.toString())
+                }
+            }
+
+        })
     }
 
     companion object: SingletonHolder<MovieRepository, Context>(::MovieRepository)

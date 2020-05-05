@@ -1,29 +1,25 @@
 package com.ajay.mediapedia.network
 
-import android.os.Build
-import okhttp3.ConnectionSpec
+import com.ajay.mediapedia.BuildConfig
+import com.ajay.mediapedia.utils.Constants
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import java.util.*
 
 object ApiClient {
 
     private val mMovieApi: MovieApi
-    const val BASE_URL = "https://api.themoviedb.org/3/"
 
     init {
-        var tlsspecs = listOf(ConnectionSpec.MODERN_TLS)
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            tlsspecs = listOf(ConnectionSpec.COMPATIBLE_TLS)
-        }
-
         val client = OkHttpClient.Builder()
-            .connectionSpecs(tlsspecs)
-            .build()
-
+        if(BuildConfig.DEBUG) {
+            val interceptor = HttpLoggingInterceptor()
+            interceptor.level = HttpLoggingInterceptor.Level.BODY
+            client.addInterceptor(interceptor)
+        }
         mMovieApi = Retrofit.Builder()
-            .baseUrl(BASE_URL)
-//            .client(client)
+            .baseUrl(Constants.MOVIE_BASE_URL)
+            .client(client.build())
             .build()
             .create(MovieApi::class.java)
     }

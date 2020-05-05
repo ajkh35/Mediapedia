@@ -44,9 +44,16 @@ dependencies {
 
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.8.1'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.8.0'
 
     // Gson
     implementation 'com.google.code.gson:gson:2.8.6'
+
+    // ModelMapper
+    implementation 'org.modelmapper:modelmapper:2.3.7'
+
+    // Picasso
+    implementation 'com.squareup.picasso:picasso:2.71828'
 
     // ViewModel
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"

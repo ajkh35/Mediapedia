@@ -1,46 +1,66 @@
 package com.ajay.mediapedia.fragments
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
+import android.widget.ProgressBar
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ajay.mediapedia.HomeActivity
 
 import com.ajay.mediapedia.R
-import com.ajay.mediapedia.data.model.NetworkMovieDto
-import com.ajay.mediapedia.viewmodels.BaseViewModelFactory
-import com.ajay.mediapedia.viewmodels.MovieViewModel
+import com.ajay.mediapedia.adapters.NowPlayingAdapter
+import com.ajay.mediapedia.adapters.PopularMovieAdapter
+import com.ajay.mediapedia.data.model.Movie
+import com.ajay.mediapedia.data.model.MovieNetworkDto
+import com.ajay.mediapedia.network.ApiClient
+import com.ajay.mediapedia.utils.Constants
+import com.ajay.mediapedia.viewmodels.SharedViewModel
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.squareup.picasso.Picasso
 import com.synnapps.carouselview.CarouselView
-import kotlinx.android.synthetic.main.fragment_movies.*
+import okhttp3.ResponseBody
+import org.json.JSONObject
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val TITLE = "title"
-//private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [MoviesFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+// Carousel
+private const val CAROUSEL_IMAGE_COUNT = 6
+
 class MoviesFragment : Fragment() {
-    // TODO: Rename and change types of parameters
+
+    private val TAG: String = javaClass.simpleName
     private var mTitle: String? = null
-//    private var param2: String? = null
-    private val mImages: Array<Int> = arrayOf(R.mipmap.mediapedia,R.mipmap.mediapedia,R.mipmap.mediapedia)
-    private lateinit var mViewModel: MovieViewModel
+
+    // SharedViewModel
+    private lateinit var mViewModel: SharedViewModel
+
+    // Popular Movies
+    private lateinit var mPopularMoviesList: ArrayList<Movie>
+    private lateinit var mPopularMoviesAdapter: PopularMovieAdapter
+    private var mPopularMoviesPage: Int = 1
+    private lateinit var mPopularMoviesProgressBar: ProgressBar
+    private var mPopularMoviesLoading: Boolean = true
+
+    // Now playing
+    private lateinit var mNowPlayingList: ArrayList<Movie>
+    private lateinit var mNowPlayingAdapter: NowPlayingAdapter
+    private var mNowPlayingPage: Int = 1
+    private lateinit var mNowPlayingProgressBar: ProgressBar
+    private var mNowPlayingLoading: Boolean = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             mTitle = it.getString(TITLE)
-//            param2 = it.getString(ARG_PARAM2)
         }
     }
 
@@ -51,20 +71,45 @@ class MoviesFragment : Fragment() {
         // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.fragment_movies, container, false)
 
-        activity.run {
-            mViewModel = ViewModelProvider(this as HomeActivity,
-                BaseViewModelFactory{MovieViewModel(application)}).get(MovieViewModel::class.java)
-        }
+        // setup shared viewmodel
+        mViewModel = (activity as HomeActivity).getSharedViewModel()
 
-        mViewModel.getPopularMovies().observe(this, Observer<List<NetworkMovieDto>> {
-            Toast.makeText(activity, it.toString(), Toast.LENGTH_LONG).show()
+        // Popular movies
+        mPopularMoviesProgressBar = view.findViewById(R.id.progress_bar_popular_movies)
+        setupPopularMovieRecycler(view)
+        mViewModel.getPopularMovies(1).observe(this, Observer<List<MovieNetworkDto>> {
+            // Map to Movie list
+            val moviesList = ArrayList<Movie>()
+            for(movieDto in it) {
+                moviesList.add(movieDto.toMovie())
+            }
+
+            mPopularMoviesList.addAll(moviesList)
+            mPopularMoviesAdapter.notifyDataSetChanged()
+            mPopularMoviesProgressBar.visibility = View.GONE
+            mPopularMoviesLoading = true
+
+            // Setup the movie carousel
+            if(mPopularMoviesList.isNotEmpty()) {
+                setupCarousel(view)
+            }
         })
 
-        // Setup the movie carousel
-        setupCarousel(view)
+        // Now playing
+        mNowPlayingProgressBar = view.findViewById(R.id.progress_bar_now_playing)
+        setupNowPlayingRecycler(view)
+        mViewModel.getNowPlayingMovies(1).observe(this, Observer<List<MovieNetworkDto>>{
+            // Map to Movie list
+            val moviesList = ArrayList<Movie>()
+            for(movieDto in it) {
+                moviesList.add(movieDto.toMovie())
+            }
 
-        // Setup movie recycler
-        setupMovieRecycler(view)
+            mNowPlayingList.addAll(moviesList)
+            mNowPlayingAdapter.notifyDataSetChanged()
+            mNowPlayingProgressBar.visibility = View.GONE
+            mNowPlayingLoading = true
+        })
 
         return view
     }
@@ -74,19 +119,108 @@ class MoviesFragment : Fragment() {
      */
     private fun setupCarousel(view: View) {
         val carousel = view.findViewById(R.id.movie_carousel) as CarouselView
-        carousel.pageCount = mImages.size
+
         carousel.setImageListener { position, imageView ->
-            imageView.setImageResource(mImages[position])
+            if(mPopularMoviesList.isNotEmpty()) {
+                Picasso.get()
+                    .load(Constants.MOVIE_IMAGE_W500_BASE_URL + mPopularMoviesList[position].backdropPath)
+                    .resize(300,400)
+                    .centerInside()
+                    .placeholder(R.mipmap.mediapedia)
+                    .into(imageView)
+            }
+        }
+        carousel.pageCount = CAROUSEL_IMAGE_COUNT
+
+        //region Custom Carousel View
+//        carousel.setViewListener {
+//            val carouselView = layoutInflater.inflate(R.layout.custom_carousel, null)
+//            val imageView = carouselView.findViewById<ImageView>(R.id.carousel_image)
+//            val textView = carouselView.findViewById<TextView>(R.id.carousel_text)
+//
+//            if(mPopularMoviesList.isNotEmpty()) {
+//                textView.text = mPopularMoviesList[it].title
+//                Picasso.get()
+//                    .load(Constants.MOVIE_IMAGE_W500_BASE_URL + mPopularMoviesList[it].backdropPath)
+//                    .placeholder(R.mipmap.mediapedia)
+//                    .into(imageView)
+//            }
+//
+//            carouselView
+//        }
+        //endregion
+    }
+
+    /**
+     * Method to setup popular movies list
+     */
+    private fun setupPopularMovieRecycler(view: View) {
+        val recycler = view.findViewById<RecyclerView>(R.id.popular_movie_recycler)
+        val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
+        mPopularMoviesList = ArrayList()
+        mPopularMoviesAdapter = PopularMovieAdapter(mPopularMoviesList)
+
+        recycler.apply {
+            this.layoutManager = layoutManager
+            adapter = mPopularMoviesAdapter
+            addOnScrollListener(object: RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    if(dx > 0) {
+                        if(mPopularMoviesPage > 9) {
+                            return
+                        }
+                        val manager = this@apply.layoutManager as LinearLayoutManager
+                        val visibleItemCount = manager.childCount
+                        val totalItemCount = manager.itemCount
+                        val pastVisibleItems = manager.findFirstVisibleItemPosition()
+
+                        if(mPopularMoviesLoading) {
+                            if((visibleItemCount + pastVisibleItems) >= totalItemCount) {
+                                mPopularMoviesProgressBar.visibility = View.VISIBLE
+                                mPopularMoviesLoading = false
+                                mViewModel.getMorePopularMovies(++mPopularMoviesPage)
+                            }
+                        }
+                    }
+                }
+            })
         }
     }
 
     /**
-     * Method to setup movie recycler
+     * Method to setup now playing list
      */
-    private fun setupMovieRecycler(view: View) {
-        val recycler = view.findViewById<RecyclerView>(R.id.movie_recycler)
+    private fun setupNowPlayingRecycler(view: View) {
+        val recycler = view.findViewById<RecyclerView>(R.id.now_playing_recycler)
         val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
-        recycler.layoutManager = layoutManager
+        mNowPlayingList = ArrayList()
+        mNowPlayingAdapter = NowPlayingAdapter(mNowPlayingList)
+
+        recycler.apply {
+            this.layoutManager = layoutManager
+            adapter = mNowPlayingAdapter
+            addOnScrollListener(object: RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    if(dx > 0) {
+                        if(mNowPlayingPage > 9) {
+                            return
+                        }
+                        val manager = this@apply.layoutManager as LinearLayoutManager
+                        val visibleItemCount = manager.childCount
+                        val totalItemCount = manager.itemCount
+                        val pastVisibleItems = manager.findFirstVisibleItemPosition()
+
+                        if(mNowPlayingLoading) {
+                            if((visibleItemCount + pastVisibleItems) >= totalItemCount) {
+                                mNowPlayingProgressBar.visibility = View.VISIBLE
+                                mNowPlayingLoading = false
+                                mViewModel.getMoreNowPlayingMovies(++mNowPlayingPage)
+                            }
+                        }
+                    }
+                }
+            })
+        }
     }
 
     companion object {
@@ -95,16 +229,13 @@ class MoviesFragment : Fragment() {
          * this fragment using the provided parameters.
          *
          * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
          * @return A new instance of fragment MoviesFragment.
          */
-        // TODO: Rename and change types and number of parameters
         @JvmStatic
-        fun newInstance(title: String/*, param2: String*/) =
+        fun newInstance(title: String) =
             MoviesFragment().apply {
                 arguments = Bundle().apply {
                     putString(TITLE, title)
-//                    putString(ARG_PARAM2, param2)
                 }
             }
     }
