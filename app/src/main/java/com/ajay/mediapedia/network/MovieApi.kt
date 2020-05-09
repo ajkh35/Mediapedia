@@ -21,4 +21,18 @@ interface MovieApi {
         @Header("Content-Type") contentType: String,
         @Query("page") page: Int
     ): Call<ResponseBody>
+
+    @GET("movie/upcoming")
+    fun getUpcoming(
+        @Header("Authorization") auth: String,
+        @Header("Content-Type") contentType: String,
+        @Header("page") page: Int
+    ): Call<ResponseBody>
+
+    @GET("tv/popular")
+    fun getPopularShows(
+        @Header("Authorization") auth: String,
+        @Header("Content-Type") contentType: String,
+        @Header("page") page: Int
+    ): Call<ResponseBody>
 }

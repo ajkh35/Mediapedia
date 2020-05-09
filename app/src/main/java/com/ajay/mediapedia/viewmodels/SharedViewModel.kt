@@ -3,10 +3,9 @@ package com.ajay.mediapedia.viewmodels
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
-import com.ajay.mediapedia.data.model.Movie
 import com.ajay.mediapedia.data.model.MovieNetworkDto
+import com.ajay.mediapedia.data.model.ShowNetworkDto
 import com.ajay.mediapedia.data.repositories.MovieRepository
-import org.modelmapper.ModelMapper
 
 class SharedViewModel(application: Application): AndroidViewModel(application) {
 
@@ -14,7 +13,14 @@ class SharedViewModel(application: Application): AndroidViewModel(application) {
      * Method to get popular movies
      */
     fun getPopularMovies(page: Int): MutableLiveData<List<MovieNetworkDto>> {
-        return MovieRepository.getInstance(getApplication()).getPopularMoviesFromApi(page)
+        return MovieRepository.getInstance(getApplication()).getPopularFromApi(page)
+    }
+
+    /**
+     * Method to get more popular movies
+     */
+    fun getMorePopularMovies(page: Int) {
+        MovieRepository.getInstance(getApplication()).getMorePopularMoviesFromApi(page)
     }
 
     /**
@@ -32,9 +38,30 @@ class SharedViewModel(application: Application): AndroidViewModel(application) {
     }
 
     /**
-     * Method to get more popular movies
+     * Method to get upcoming movies
      */
-    fun getMorePopularMovies(page: Int) {
-        MovieRepository.getInstance(getApplication()).getMorePopularMoviesFromApi(page)
+    fun getUpcomingMovies(page: Int): MutableLiveData<List<MovieNetworkDto>> {
+        return MovieRepository.getInstance(getApplication()).getUpcomingFromApi(page)
+    }
+
+    /**
+     * Method to get more upcoming movies
+     */
+    fun getMoreUpcomingMovies(page: Int) {
+        MovieRepository.getInstance(getApplication()).getMoreUpcomingMoviesFromApi(page)
+    }
+
+    /**
+     * Method to get popular shows
+     */
+    fun getPopularShows(page: Int): MutableLiveData<List<ShowNetworkDto>> {
+        return MovieRepository.getInstance(getApplication()).getPopularShows(page)
+    }
+
+    /**
+     * Method to get more popular tv shows
+     */
+    fun getMorePopularShows(page: Int) {
+        MovieRepository.getInstance(getApplication()).getMorePopularShows(page)
     }
 }

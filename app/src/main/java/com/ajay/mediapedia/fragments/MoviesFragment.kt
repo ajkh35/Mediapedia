@@ -1,39 +1,34 @@
 package com.ajay.mediapedia.fragments
 
 import android.os.Bundle
-import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ajay.mediapedia.HomeActivity
-
 import com.ajay.mediapedia.R
 import com.ajay.mediapedia.adapters.NowPlayingAdapter
 import com.ajay.mediapedia.adapters.PopularMovieAdapter
+import com.ajay.mediapedia.adapters.PopularShowsAdapter
+import com.ajay.mediapedia.adapters.UpcomingMoviesAdapter
 import com.ajay.mediapedia.data.model.Movie
 import com.ajay.mediapedia.data.model.MovieNetworkDto
-import com.ajay.mediapedia.network.ApiClient
+import com.ajay.mediapedia.data.model.Show
+import com.ajay.mediapedia.data.model.ShowNetworkDto
 import com.ajay.mediapedia.utils.Constants
+import com.ajay.mediapedia.utils.GlobalUtils
 import com.ajay.mediapedia.viewmodels.SharedViewModel
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.squareup.picasso.Picasso
 import com.synnapps.carouselview.CarouselView
-import okhttp3.ResponseBody
-import org.json.JSONObject
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 private const val TITLE = "title"
 
-// Carousel
 private const val CAROUSEL_IMAGE_COUNT = 6
+private const val MAX_PAGES = 10
 
 class MoviesFragment : Fragment() {
 
@@ -56,6 +51,20 @@ class MoviesFragment : Fragment() {
     private var mNowPlayingPage: Int = 1
     private lateinit var mNowPlayingProgressBar: ProgressBar
     private var mNowPlayingLoading: Boolean = true
+
+    //Upcoming Movies
+    private lateinit var mUpcomingMoviesList: ArrayList<Movie>
+    private lateinit var mUpcomingMoviesAdapter: UpcomingMoviesAdapter
+    private var mUpcomingMoviesPage: Int = 1
+    private lateinit var mUpcomingMoviesProgressBar: ProgressBar
+    private var mUpcomingMoviesLoading: Boolean = true
+
+    // Popular Shows
+    private lateinit var mPopularShowsList: ArrayList<Show>
+    private lateinit var mPopularShowsAdapter: PopularShowsAdapter
+    private var mPopularShowsPage: Int = 1
+    private lateinit var mPopularShowsProgressBar: ProgressBar
+    private var mPopularShowsLoading: Boolean = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,6 +120,38 @@ class MoviesFragment : Fragment() {
             mNowPlayingLoading = true
         })
 
+        //Upcoming movies
+        mUpcomingMoviesProgressBar = view.findViewById(R.id.progress_bar_upcoming_movies)
+        setupUpcomingRecycler(view)
+        mViewModel.getUpcomingMovies(1).observe(this, Observer<List<MovieNetworkDto>> {
+            // Map to Movie list
+            val moviesList = ArrayList<Movie>()
+            for(movieDto in it) {
+                moviesList.add(movieDto.toMovie())
+            }
+
+            mUpcomingMoviesList.addAll(moviesList)
+            mUpcomingMoviesAdapter.notifyDataSetChanged()
+            mUpcomingMoviesProgressBar.visibility = View.GONE
+            mUpcomingMoviesLoading = true
+        })
+
+        //Popular shows
+        mPopularShowsProgressBar = view.findViewById(R.id.progress_bar_popular_shows)
+        setupPopularShowsRecycler(view)
+        mViewModel.getPopularShows(1).observe(this, Observer<List<ShowNetworkDto>> {
+            // Map to Movie list
+            val showsList = ArrayList<Show>()
+            for(showDto in it) {
+                showsList.add(showDto.toShow())
+            }
+
+            mPopularShowsList.addAll(showsList)
+            mPopularShowsAdapter.notifyDataSetChanged()
+            mPopularShowsProgressBar.visibility = View.GONE
+            mPopularShowsLoading = true
+        })
+
         return view
     }
 
@@ -126,7 +167,7 @@ class MoviesFragment : Fragment() {
                     .load(Constants.MOVIE_IMAGE_W500_BASE_URL + mPopularMoviesList[position].backdropPath)
                     .resize(300,400)
                     .centerInside()
-                    .placeholder(R.mipmap.mediapedia)
+                    .placeholder(R.drawable.mediapedia)
                     .into(imageView)
             }
         }
@@ -155,7 +196,7 @@ class MoviesFragment : Fragment() {
      * Method to setup popular movies list
      */
     private fun setupPopularMovieRecycler(view: View) {
-        val recycler = view.findViewById<RecyclerView>(R.id.popular_movie_recycler)
+        val recycler = view.findViewById<RecyclerView>(R.id.popular_movies_recycler)
         val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         mPopularMoviesList = ArrayList()
         mPopularMoviesAdapter = PopularMovieAdapter(mPopularMoviesList)
@@ -166,7 +207,7 @@ class MoviesFragment : Fragment() {
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     if(dx > 0) {
-                        if(mPopularMoviesPage > 9) {
+                        if(mPopularMoviesPage > MAX_PAGES - 1) {
                             return
                         }
                         val manager = this@apply.layoutManager as LinearLayoutManager
@@ -176,9 +217,11 @@ class MoviesFragment : Fragment() {
 
                         if(mPopularMoviesLoading) {
                             if((visibleItemCount + pastVisibleItems) >= totalItemCount) {
-                                mPopularMoviesProgressBar.visibility = View.VISIBLE
-                                mPopularMoviesLoading = false
-                                mViewModel.getMorePopularMovies(++mPopularMoviesPage)
+                                if(GlobalUtils.isNetWorkConnected(activity as HomeActivity)) {
+                                    mPopularMoviesProgressBar.visibility = View.VISIBLE
+                                    mPopularMoviesLoading = false
+                                    mViewModel.getMorePopularMovies(++mPopularMoviesPage)
+                                }
                             }
                         }
                     }
@@ -202,7 +245,7 @@ class MoviesFragment : Fragment() {
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     if(dx > 0) {
-                        if(mNowPlayingPage > 9) {
+                        if(mNowPlayingPage > MAX_PAGES - 1) {
                             return
                         }
                         val manager = this@apply.layoutManager as LinearLayoutManager
@@ -212,9 +255,87 @@ class MoviesFragment : Fragment() {
 
                         if(mNowPlayingLoading) {
                             if((visibleItemCount + pastVisibleItems) >= totalItemCount) {
-                                mNowPlayingProgressBar.visibility = View.VISIBLE
-                                mNowPlayingLoading = false
-                                mViewModel.getMoreNowPlayingMovies(++mNowPlayingPage)
+                                if(GlobalUtils.isNetWorkConnected(activity as HomeActivity)) {
+                                    mNowPlayingProgressBar.visibility = View.VISIBLE
+                                    mNowPlayingLoading = false
+                                    mViewModel.getMoreNowPlayingMovies(++mNowPlayingPage)
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+        }
+    }
+
+    /**
+     * Method to setup upcoming list
+     */
+    private fun setupUpcomingRecycler(view: View) {
+        val recycler = view.findViewById<RecyclerView>(R.id.upcoming_movies_recycler)
+        val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
+        mUpcomingMoviesList = ArrayList()
+        mUpcomingMoviesAdapter = UpcomingMoviesAdapter(mUpcomingMoviesList)
+
+        recycler.apply {
+            this.layoutManager = layoutManager
+            adapter = mUpcomingMoviesAdapter
+            addOnScrollListener(object: RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    if(dx > 0) {
+                        if(mUpcomingMoviesPage > -1) {
+                            return
+                        }
+                        val manager = this@apply.layoutManager as LinearLayoutManager
+                        val visibleItemCount = manager.childCount
+                        val totalItemCount = manager.itemCount
+                        val pastVisibleItems = manager.findFirstVisibleItemPosition()
+
+                        if(mUpcomingMoviesLoading) {
+                            if((visibleItemCount + pastVisibleItems) >= totalItemCount) {
+                                if(GlobalUtils.isNetWorkConnected(activity as HomeActivity)) {
+                                    mUpcomingMoviesProgressBar.visibility = View.VISIBLE
+                                    mUpcomingMoviesLoading = false
+                                    mViewModel.getMoreUpcomingMovies(++mUpcomingMoviesPage)
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+        }
+    }
+
+    /**
+     * Method to setup popular shows
+     */
+    private fun setupPopularShowsRecycler(view: View) {
+        val recycler = view.findViewById<RecyclerView>(R.id.popular_shows_recycler)
+        val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
+        mPopularShowsList = ArrayList()
+        mPopularShowsAdapter = PopularShowsAdapter(mPopularShowsList)
+
+        recycler.apply {
+            this.layoutManager = layoutManager
+            adapter = mPopularShowsAdapter
+            addOnScrollListener(object: RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    if(dx > 0) {
+                        if(mPopularShowsPage > MAX_PAGES - 1) {
+                            return
+                        }
+                        val manager = this@apply.layoutManager as LinearLayoutManager
+                        val visibleItemCount = manager.childCount
+                        val totalItemCount = manager.itemCount
+                        val pastVisibleItems = manager.findFirstVisibleItemPosition()
+
+                        if(mPopularShowsLoading) {
+                            if((visibleItemCount + pastVisibleItems) >= totalItemCount) {
+                                if(GlobalUtils.isNetWorkConnected(activity as HomeActivity)) {
+                                    mPopularShowsProgressBar.visibility = View.VISIBLE
+                                    mPopularShowsLoading = false
+                                    mViewModel.getMorePopularShows(++mPopularShowsPage)
+                                }
                             }
                         }
                     }
