@@ -1,5 +1,7 @@
 package com.ajay.mediapedia.data.model
 
+import java.io.Serializable
+
 data class Show(
     val popularity: Double,
     val voteCount: Long,
@@ -14,4 +16,4 @@ data class Show(
     val name: String,
     val originCountry: Array<String>,
     val firstAirDate: String
-)
+): Serializable

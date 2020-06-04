@@ -17,7 +17,7 @@
             app:layout_constraintRight_toRightOf="parent"
             android:layout_marginBottom="10dp"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="@dimen/_200sdp"
             app:fillColor="#FFFFFFFF"
             app:pageColor="#00000000"
             app:radius="3dp"
@@ -26,164 +26,155 @@
             app:strokeWidth="1dp"/>
 
         <LinearLayout
-            android:id="@+id/now_playing_ll"
             app:layout_constraintTop_toBottomOf="@id/movie_carousel"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            android:layout_margin="5dp"
-            android:paddingTop="10dp"
             android:orientation="vertical"
+            android:layout_margin="@dimen/_10sdp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <TextView
-                android:text="Now Playing"
-                android:textSize="25sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
             <LinearLayout
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_width="wrap_content"
+                android:id="@+id/now_playing_ll"
+                android:paddingTop="@dimen/_10sdp"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/now_playing_recycler"
-                    android:layout_marginTop="10dp"
+                <TextView
+                    android:text="Now Playing"
+                    android:textSize="25sp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
-                <ProgressBar
-                    android:id="@+id/progress_bar_now_playing"
-                    android:indeterminate="true"
-                    android:visibility="gone"
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:gravity="center"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/now_playing_recycler"
+                        android:layout_marginTop="10dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <ProgressBar
+                        android:id="@+id/progress_bar_now_playing"
+                        android:indeterminate="true"
+                        android:visibility="gone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
             </LinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/popular_movies_ll"
-            app:layout_constraintTop_toBottomOf="@id/now_playing_ll"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            android:layout_margin="5dp"
-            android:paddingTop="10dp"
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:text="Popular Movies"
-                android:textSize="25sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
 
             <LinearLayout
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_width="wrap_content"
+                android:id="@+id/popular_movies_ll"
+                android:paddingTop="@dimen/_10sdp"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/popular_movies_recycler"
-                    android:layout_marginTop="10dp"
+                <TextView
+                    android:text="Popular Movies"
+                    android:textSize="25sp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
-                <ProgressBar
-                    android:id="@+id/progress_bar_popular_movies"
-                    android:indeterminate="true"
-                    android:indeterminateTint="@color/colorPrimary"
-                    android:visibility="gone"
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:gravity="center"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/popular_movies_recycler"
+                        android:layout_marginTop="10dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <ProgressBar
+                        android:id="@+id/progress_bar_popular_movies"
+                        android:indeterminate="true"
+                        android:indeterminateTint="@color/colorPrimary"
+                        android:visibility="gone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
             </LinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/upcoming_movies_ll"
-            app:layout_constraintTop_toBottomOf="@id/popular_movies_ll"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            android:layout_margin="5dp"
-            android:paddingTop="10dp"
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:text="Upcoming Movies"
-                android:textSize="25sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
 
             <LinearLayout
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_width="wrap_content"
+                android:id="@+id/upcoming_movies_ll"
+                android:paddingTop="@dimen/_10sdp"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/upcoming_movies_recycler"
-                    android:layout_marginTop="10dp"
+                <TextView
+                    android:text="Upcoming Movies"
+                    android:textSize="25sp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
-                <ProgressBar
-                    android:id="@+id/progress_bar_upcoming_movies"
-                    android:indeterminate="true"
-                    android:indeterminateTint="@color/colorPrimary"
-                    android:visibility="gone"
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:gravity="center"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/upcoming_movies_recycler"
+                        android:layout_marginTop="10dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <ProgressBar
+                        android:id="@+id/progress_bar_upcoming_movies"
+                        android:indeterminate="true"
+                        android:indeterminateTint="@color/colorPrimary"
+                        android:visibility="gone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
             </LinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/popular_shows_ll"
-            app:layout_constraintTop_toBottomOf="@id/upcoming_movies_ll"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            android:layout_margin="5dp"
-            android:paddingTop="10dp"
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:text="Popular Shows"
-                android:textSize="25sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
 
             <LinearLayout
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_width="wrap_content"
+                android:id="@+id/popular_shows_ll"
+                android:paddingTop="@dimen/_10sdp"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/popular_shows_recycler"
-                    android:layout_marginTop="10dp"
+                <TextView
+                    android:text="Popular Shows"
+                    android:textSize="25sp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
 
-                <ProgressBar
-                    android:id="@+id/progress_bar_popular_shows"
-                    android:indeterminate="true"
-                    android:indeterminateTint="@color/colorPrimary"
-                    android:visibility="gone"
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:gravity="center"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/popular_shows_recycler"
+                        android:layout_marginTop="10dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <ProgressBar
+                        android:id="@+id/progress_bar_popular_shows"
+                        android:indeterminate="true"
+                        android:indeterminateTint="@color/colorPrimary"
+                        android:visibility="gone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
             </LinearLayout>
-
         </LinearLayout>
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </ScrollView>

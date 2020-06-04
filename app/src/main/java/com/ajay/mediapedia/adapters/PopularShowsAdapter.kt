@@ -7,12 +7,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ajay.mediapedia.R
 import com.ajay.mediapedia.data.model.Show
 import com.ajay.mediapedia.utils.Constants
+import com.ajay.mediapedia.utils.listeners.OnItemClickListener
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.show_item.view.*
 
-class PopularShowsAdapter(list: ArrayList<Show>): RecyclerView.Adapter<PopularShowsAdapter.ShowHolder>() {
+class PopularShowsAdapter(list: ArrayList<Show>, listener: OnItemClickListener): RecyclerView.Adapter<PopularShowsAdapter.ShowHolder>() {
 
     private val mShowsList = list
+    private val mListener = listener
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ShowHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.show_item, parent, false)
@@ -32,6 +34,10 @@ class PopularShowsAdapter(list: ArrayList<Show>): RecyclerView.Adapter<PopularSh
             .resize(300,400)
             .placeholder(R.drawable.mediapedia)
             .into(itemView.show_image)
+
+        itemView.setOnClickListener {
+            mListener.onItemClick(mShowsList[position])
+        }
     }
 
     class ShowHolder(itemView: View): RecyclerView.ViewHolder(itemView)

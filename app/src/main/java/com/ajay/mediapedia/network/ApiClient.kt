@@ -9,22 +9,37 @@ import retrofit2.Retrofit
 object ApiClient {
 
     private val mMovieApi: MovieApi
+    private val mMusicApi: MusicApi
 
     init {
-        val client = OkHttpClient.Builder()
-        if(BuildConfig.DEBUG) {
-            val interceptor = HttpLoggingInterceptor()
-            interceptor.level = HttpLoggingInterceptor.Level.BODY
-            client.addInterceptor(interceptor)
-        }
+        val client = OkHttpClient.Builder().apply {
+            if(BuildConfig.DEBUG) {
+                val interceptor = HttpLoggingInterceptor()
+                interceptor.level = HttpLoggingInterceptor.Level.BODY
+                addInterceptor(interceptor)
+            }
+        }.build()
+
+        // Movie Api
         mMovieApi = Retrofit.Builder()
             .baseUrl(Constants.MOVIE_BASE_URL)
-            .client(client.build())
+            .client(client)
             .build()
             .create(MovieApi::class.java)
+
+        // Music Api
+        mMusicApi = Retrofit.Builder()
+            .baseUrl(Constants.MUSIC_BASE_URL)
+            .client(client)
+            .build()
+            .create(MusicApi::class.java)
     }
 
     fun getMovieApi(): MovieApi {
         return mMovieApi
+    }
+
+    fun getMusicApi(): MusicApi {
+        return mMusicApi
     }
 }

@@ -1,33 +1,41 @@
 package com.ajay.mediapedia.fragments
 
+import android.app.Dialog
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-
+import android.view.Window
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.ajay.mediapedia.HomeActivity
 import com.ajay.mediapedia.R
+import com.ajay.mediapedia.adapters.GlobalTop50TracksAdapter
+import com.ajay.mediapedia.data.model.music.Track
+import com.ajay.mediapedia.viewmodels.SharedViewModel
+import kotlinx.android.synthetic.main.fragment_music.*
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val TITLE = "title"
-//private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [MusicFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class MusicFragment : Fragment() {
-    // TODO: Rename and change types of parameters
     private var mTitle: String? = null
-//    private var param2: String? = null
+    private val TAG: String = javaClass.simpleName
+    private lateinit var mProgressDialog: Dialog
+
+    private lateinit var mViewModel: SharedViewModel
+
+    private lateinit var mGlobalTop50TracksList: ArrayList<Track>
+    private lateinit var mGlobalTop50TracksAdapter: GlobalTop50TracksAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             mTitle = it.getString(TITLE)
-//            param2 = it.getString(ARG_PARAM2)
         }
     }
 
@@ -35,8 +43,45 @@ class MusicFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_music, container, false)
+
+        val view = inflater.inflate(R.layout.fragment_music, container, false)
+
+        mViewModel = (activity as HomeActivity).getSharedViewModel()
+
+        mProgressDialog = Dialog(activity, android.R.style.Theme_Black)
+        val progressView = LayoutInflater.from(activity).inflate(R.layout.progress_dialog, null)
+        mProgressDialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        mProgressDialog.setContentView(progressView)
+        mProgressDialog.setCancelable(false)
+        mProgressDialog.window?.setBackgroundDrawableResource(R.color.progress_bar_background)
+        mProgressDialog.show()
+
+        setupTopTracksRecycler(view)
+        mViewModel.getGlobalTop50Tracks().observe(this, Observer {
+            if(it.isNotEmpty()) {
+                val tracks = ArrayList<Track>()
+                for(dto in it) {
+                    tracks.add(dto.toTrack())
+                }
+
+                mGlobalTop50TracksList.addAll(tracks)
+                mGlobalTop50TracksAdapter.notifyDataSetChanged()
+
+                mProgressDialog.dismiss()
+            }
+        })
+        return view
+    }
+
+    private fun setupTopTracksRecycler(view: View) {
+        val recycler = view.findViewById<RecyclerView>(R.id.top_tracks_recycler)
+        val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
+        mGlobalTop50TracksList = ArrayList()
+        mGlobalTop50TracksAdapter = GlobalTop50TracksAdapter(mGlobalTop50TracksList)
+        recycler.apply {
+            this.layoutManager = layoutManager
+            adapter = mGlobalTop50TracksAdapter
+        }
     }
 
     companion object {
@@ -45,16 +90,13 @@ class MusicFragment : Fragment() {
          * this fragment using the provided parameters.
          *
          * @param title Parameter 1.
-         * @param param2 Parameter 2.
          * @return A new instance of fragment MusicFragment.
          */
-        // TODO: Rename and change types and number of parameters
         @JvmStatic
-        fun newInstance(title: String/*, param2: String*/) =
+        fun newInstance(title: String) =
             MusicFragment().apply {
                 arguments = Bundle().apply {
                     putString(TITLE, title)
-//                    putString(ARG_PARAM2, param2)
                 }
             }
     }

@@ -1,15 +1,20 @@
 package com.ajay.mediapedia.fragments
 
+import android.app.Dialog
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ajay.mediapedia.HomeActivity
+import com.ajay.mediapedia.MovieDetailsActivity
 import com.ajay.mediapedia.R
 import com.ajay.mediapedia.adapters.NowPlayingAdapter
 import com.ajay.mediapedia.adapters.PopularMovieAdapter
@@ -21,6 +26,7 @@ import com.ajay.mediapedia.data.model.Show
 import com.ajay.mediapedia.data.model.ShowNetworkDto
 import com.ajay.mediapedia.utils.Constants
 import com.ajay.mediapedia.utils.GlobalUtils
+import com.ajay.mediapedia.utils.listeners.OnItemClickListener
 import com.ajay.mediapedia.viewmodels.SharedViewModel
 import com.squareup.picasso.Picasso
 import com.synnapps.carouselview.CarouselView
@@ -34,6 +40,9 @@ class MoviesFragment : Fragment() {
 
     private val TAG: String = javaClass.simpleName
     private var mTitle: String? = null
+
+    private lateinit var mProgressDialog: Dialog
+    private var mProgressLoadCount = 0
 
     // SharedViewModel
     private lateinit var mViewModel: SharedViewModel
@@ -83,24 +92,38 @@ class MoviesFragment : Fragment() {
         // setup shared viewmodel
         mViewModel = (activity as HomeActivity).getSharedViewModel()
 
+        // show progress bar
+        mProgressDialog = Dialog(activity, android.R.style.Theme_Black)
+        val progressView = LayoutInflater.from(activity).inflate(R.layout.progress_dialog, null)
+        mProgressDialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        mProgressDialog.setContentView(progressView)
+        mProgressDialog.setCancelable(false)
+        mProgressDialog.window?.setBackgroundDrawableResource(R.color.progress_bar_background)
+        mProgressDialog.show()
+
         // Popular movies
         mPopularMoviesProgressBar = view.findViewById(R.id.progress_bar_popular_movies)
         setupPopularMovieRecycler(view)
         mViewModel.getPopularMovies(1).observe(this, Observer<List<MovieNetworkDto>> {
-            // Map to Movie list
-            val moviesList = ArrayList<Movie>()
-            for(movieDto in it) {
-                moviesList.add(movieDto.toMovie())
-            }
+            if(it.isNotEmpty()) {
+                // Map to Movie list
+                val moviesList = ArrayList<Movie>()
+                for(movieDto in it) {
+                    moviesList.add(movieDto.toMovie())
+                }
 
-            mPopularMoviesList.addAll(moviesList)
-            mPopularMoviesAdapter.notifyDataSetChanged()
-            mPopularMoviesProgressBar.visibility = View.GONE
-            mPopularMoviesLoading = true
+                mPopularMoviesList.addAll(moviesList)
+                mPopularMoviesAdapter.notifyDataSetChanged()
+                mPopularMoviesProgressBar.visibility = View.GONE
+                mPopularMoviesLoading = true
 
-            // Setup the movie carousel
-            if(mPopularMoviesList.isNotEmpty()) {
+                // Setup the movie carousel
                 setupCarousel(view)
+
+                mProgressLoadCount++
+                if(mProgressLoadCount == 4) {
+                    mProgressDialog.dismiss()
+                }
             }
         })
 
@@ -108,48 +131,69 @@ class MoviesFragment : Fragment() {
         mNowPlayingProgressBar = view.findViewById(R.id.progress_bar_now_playing)
         setupNowPlayingRecycler(view)
         mViewModel.getNowPlayingMovies(1).observe(this, Observer<List<MovieNetworkDto>>{
-            // Map to Movie list
-            val moviesList = ArrayList<Movie>()
-            for(movieDto in it) {
-                moviesList.add(movieDto.toMovie())
-            }
+            if(it.isNotEmpty()) {
+                // Map to Movie list
+                val moviesList = ArrayList<Movie>()
+                for(movieDto in it) {
+                    moviesList.add(movieDto.toMovie())
+                }
 
-            mNowPlayingList.addAll(moviesList)
-            mNowPlayingAdapter.notifyDataSetChanged()
-            mNowPlayingProgressBar.visibility = View.GONE
-            mNowPlayingLoading = true
+                mNowPlayingList.addAll(moviesList)
+                mNowPlayingAdapter.notifyDataSetChanged()
+                mNowPlayingProgressBar.visibility = View.GONE
+                mNowPlayingLoading = true
+
+                mProgressLoadCount++
+                if(mProgressLoadCount == 4) {
+                    mProgressDialog.dismiss()
+                }
+            }
         })
 
         //Upcoming movies
         mUpcomingMoviesProgressBar = view.findViewById(R.id.progress_bar_upcoming_movies)
         setupUpcomingRecycler(view)
         mViewModel.getUpcomingMovies(1).observe(this, Observer<List<MovieNetworkDto>> {
-            // Map to Movie list
-            val moviesList = ArrayList<Movie>()
-            for(movieDto in it) {
-                moviesList.add(movieDto.toMovie())
-            }
+            if(it.isNotEmpty()) {
+                // Map to Movie list
+                val moviesList = ArrayList<Movie>()
+                for(movieDto in it) {
+                    moviesList.add(movieDto.toMovie())
+                }
 
-            mUpcomingMoviesList.addAll(moviesList)
-            mUpcomingMoviesAdapter.notifyDataSetChanged()
-            mUpcomingMoviesProgressBar.visibility = View.GONE
-            mUpcomingMoviesLoading = true
+                mUpcomingMoviesList.addAll(moviesList)
+                mUpcomingMoviesAdapter.notifyDataSetChanged()
+                mUpcomingMoviesProgressBar.visibility = View.GONE
+                mUpcomingMoviesLoading = true
+
+                mProgressLoadCount++
+                if(mProgressLoadCount == 4) {
+                    mProgressDialog.dismiss()
+                }
+            }
         })
 
         //Popular shows
         mPopularShowsProgressBar = view.findViewById(R.id.progress_bar_popular_shows)
         setupPopularShowsRecycler(view)
         mViewModel.getPopularShows(1).observe(this, Observer<List<ShowNetworkDto>> {
-            // Map to Movie list
-            val showsList = ArrayList<Show>()
-            for(showDto in it) {
-                showsList.add(showDto.toShow())
-            }
+            if(it.isNotEmpty()) {
+                // Map to Movie list
+                val showsList = ArrayList<Show>()
+                for(showDto in it) {
+                    showsList.add(showDto.toShow())
+                }
 
-            mPopularShowsList.addAll(showsList)
-            mPopularShowsAdapter.notifyDataSetChanged()
-            mPopularShowsProgressBar.visibility = View.GONE
-            mPopularShowsLoading = true
+                mPopularShowsList.addAll(showsList)
+                mPopularShowsAdapter.notifyDataSetChanged()
+                mPopularShowsProgressBar.visibility = View.GONE
+                mPopularShowsLoading = true
+
+                mProgressLoadCount++
+                if(mProgressLoadCount == 4) {
+                    mProgressDialog.dismiss()
+                }
+            }
         })
 
         return view
@@ -165,13 +209,19 @@ class MoviesFragment : Fragment() {
             if(mPopularMoviesList.isNotEmpty()) {
                 Picasso.get()
                     .load(Constants.MOVIE_IMAGE_W500_BASE_URL + mPopularMoviesList[position].backdropPath)
-                    .resize(300,400)
+                    .resize(400,500)
                     .centerInside()
                     .placeholder(R.drawable.mediapedia)
                     .into(imageView)
             }
         }
         carousel.pageCount = CAROUSEL_IMAGE_COUNT
+
+        carousel.setImageClickListener {
+            val intent = Intent(activity, MovieDetailsActivity::class.java)
+            intent.putExtra("movie", mPopularMoviesList[it])
+            (activity as HomeActivity).launchIntent(intent)
+        }
 
         //region Custom Carousel View
 //        carousel.setViewListener {
@@ -199,7 +249,17 @@ class MoviesFragment : Fragment() {
         val recycler = view.findViewById<RecyclerView>(R.id.popular_movies_recycler)
         val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         mPopularMoviesList = ArrayList()
-        mPopularMoviesAdapter = PopularMovieAdapter(mPopularMoviesList)
+        mPopularMoviesAdapter = PopularMovieAdapter(mPopularMoviesList, object: OnItemClickListener {
+            override fun onItemClick(movie: Movie) {
+                val intent = Intent(activity, MovieDetailsActivity::class.java)
+                intent.putExtra("movie", movie)
+                (activity as HomeActivity).launchIntent(intent)
+            }
+
+            override fun onItemClick(show: Show) {
+
+            }
+        })
 
         recycler.apply {
             this.layoutManager = layoutManager
@@ -210,10 +270,10 @@ class MoviesFragment : Fragment() {
                         if(mPopularMoviesPage > MAX_PAGES - 1) {
                             return
                         }
-                        val manager = this@apply.layoutManager as LinearLayoutManager
-                        val visibleItemCount = manager.childCount
-                        val totalItemCount = manager.itemCount
-                        val pastVisibleItems = manager.findFirstVisibleItemPosition()
+//                        val manager = this@apply.layoutManager as LinearLayoutManager
+                        val visibleItemCount = layoutManager.childCount
+                        val totalItemCount = layoutManager.itemCount
+                        val pastVisibleItems = layoutManager.findFirstVisibleItemPosition()
 
                         if(mPopularMoviesLoading) {
                             if((visibleItemCount + pastVisibleItems) >= totalItemCount) {
@@ -237,7 +297,17 @@ class MoviesFragment : Fragment() {
         val recycler = view.findViewById<RecyclerView>(R.id.now_playing_recycler)
         val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         mNowPlayingList = ArrayList()
-        mNowPlayingAdapter = NowPlayingAdapter(mNowPlayingList)
+        mNowPlayingAdapter = NowPlayingAdapter(mNowPlayingList, object: OnItemClickListener {
+            override fun onItemClick(movie: Movie) {
+                val intent = Intent(activity, MovieDetailsActivity::class.java)
+                intent.putExtra("movie", movie)
+                (activity as HomeActivity).launchIntent(intent)
+            }
+
+            override fun onItemClick(show: Show) {
+
+            }
+        })
 
         recycler.apply {
             this.layoutManager = layoutManager
@@ -275,7 +345,17 @@ class MoviesFragment : Fragment() {
         val recycler = view.findViewById<RecyclerView>(R.id.upcoming_movies_recycler)
         val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         mUpcomingMoviesList = ArrayList()
-        mUpcomingMoviesAdapter = UpcomingMoviesAdapter(mUpcomingMoviesList)
+        mUpcomingMoviesAdapter = UpcomingMoviesAdapter(mUpcomingMoviesList, object: OnItemClickListener {
+            override fun onItemClick(movie: Movie) {
+                val intent = Intent(activity, MovieDetailsActivity::class.java)
+                intent.putExtra("movie", movie)
+                (activity as HomeActivity).launchIntent(intent)
+            }
+
+            override fun onItemClick(show: Show) {
+
+            }
+        })
 
         recycler.apply {
             this.layoutManager = layoutManager
@@ -286,10 +366,9 @@ class MoviesFragment : Fragment() {
                         if(mUpcomingMoviesPage > -1) {
                             return
                         }
-                        val manager = this@apply.layoutManager as LinearLayoutManager
-                        val visibleItemCount = manager.childCount
-                        val totalItemCount = manager.itemCount
-                        val pastVisibleItems = manager.findFirstVisibleItemPosition()
+                        val visibleItemCount = layoutManager.childCount
+                        val totalItemCount = layoutManager.itemCount
+                        val pastVisibleItems = layoutManager.findFirstVisibleItemPosition()
 
                         if(mUpcomingMoviesLoading) {
                             if((visibleItemCount + pastVisibleItems) >= totalItemCount) {
@@ -313,7 +392,17 @@ class MoviesFragment : Fragment() {
         val recycler = view.findViewById<RecyclerView>(R.id.popular_shows_recycler)
         val layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         mPopularShowsList = ArrayList()
-        mPopularShowsAdapter = PopularShowsAdapter(mPopularShowsList)
+        mPopularShowsAdapter = PopularShowsAdapter(mPopularShowsList, object: OnItemClickListener {
+            override fun onItemClick(movie: Movie) {
+
+            }
+
+            override fun onItemClick(show: Show) {
+                val intent = Intent(activity, MovieDetailsActivity::class.java)
+                intent.putExtra("show", show)
+                (activity as HomeActivity).launchIntent(intent)
+            }
+        })
 
         recycler.apply {
             this.layoutManager = layoutManager
@@ -321,13 +410,12 @@ class MoviesFragment : Fragment() {
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     if(dx > 0) {
-                        if(mPopularShowsPage > MAX_PAGES - 1) {
+                        if(mPopularShowsPage > -1) {
                             return
                         }
-                        val manager = this@apply.layoutManager as LinearLayoutManager
-                        val visibleItemCount = manager.childCount
-                        val totalItemCount = manager.itemCount
-                        val pastVisibleItems = manager.findFirstVisibleItemPosition()
+                        val visibleItemCount = layoutManager.childCount
+                        val totalItemCount = layoutManager.itemCount
+                        val pastVisibleItems = layoutManager.findFirstVisibleItemPosition()
 
                         if(mPopularShowsLoading) {
                             if((visibleItemCount + pastVisibleItems) >= totalItemCount) {

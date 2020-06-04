@@ -5,7 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.ajay.mediapedia.data.model.MovieNetworkDto
 import com.ajay.mediapedia.data.model.ShowNetworkDto
+import com.ajay.mediapedia.data.model.music.TrackNetworkDto
 import com.ajay.mediapedia.data.repositories.MovieRepository
+import com.ajay.mediapedia.data.repositories.MusicRepository
 
 class SharedViewModel(application: Application): AndroidViewModel(application) {
 
@@ -63,5 +65,12 @@ class SharedViewModel(application: Application): AndroidViewModel(application) {
      */
     fun getMorePopularShows(page: Int) {
         MovieRepository.getInstance(getApplication()).getMorePopularShows(page)
+    }
+
+    /**
+     * Method to get Global top 50 tracks
+     */
+    fun getGlobalTop50Tracks(): MutableLiveData<List<TrackNetworkDto>> {
+        return MusicRepository.getInstance(getApplication()).getGlobalTop50FromApi()
     }
 }
